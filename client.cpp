@@ -1,4 +1,6 @@
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX            // <-- Windows max/min macro'larını kapatır
+
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
@@ -6,6 +8,7 @@
 #include <string>
 #include <chrono>
 #include <thread>
+#include <cstdlib>
 
 #pragma comment(lib, "Ws2_32.lib")
 
@@ -54,7 +57,19 @@ static bool starts_with(const std::string& s, const char* prefix) {
     return true;
 }
 
-int main() {
+int main(int argc, char** argv) {
+    // Kullanım:
+    // client.exe [ping_count] [delay_ms]
+    int pingCount = 10;
+    int delayMs = 200;
+
+    if (argc >= 2) pingCount = std::atoi(argv[1]);
+    if (argc >= 3) delayMs   = std::atoi(argv[2]);
+
+    // manual clamp (std::max yok)
+    if (pingCount < 1) pingCount = 1;
+    if (delayMs < 0) delayMs = 0;
+
     const char* host = "127.0.0.1";
     const char* port = "27015";
 
@@ -93,7 +108,7 @@ int main() {
     }
     freeaddrinfo(result);
 
-    // 1) HELLO
+    // HELLO
     send_line(sock, "HELLO AliEray");
     {
         std::string line;
@@ -106,19 +121,20 @@ int main() {
         std::cout << "[CLIENT] " << line << "\n";
     }
 
-    // 2) 10 kez PING/PONG RTT ölç
-    const int count = 10;
     uint64_t minRtt = (uint64_t)-1;
     uint64_t maxRtt = 0;
     uint64_t sumRtt = 0;
 
-    for (int i = 1; i <= count; i++) {
+    for (int i = 1; i <= pingCount; i++) {
         uint64_t t0 = now_ms();
-        send_line(sock, "PING " + std::to_string(t0));
+        if (!send_line(sock, "PING " + std::to_string(t0))) {
+            std::cout << "[CLIENT] send failed\n";
+            break;
+        }
 
         std::string line;
         if (!recv_line(sock, line)) {
-            std::cout << "server closed\n";
+            std::cout << "[CLIENT] server closed\n";
             break;
         }
 
@@ -132,7 +148,10 @@ int main() {
             }
 
             uint64_t rtt = now_ms() - sentTs;
-            std::cout << "[CLIENT] RTT #" << i << " = " << rtt << " ms\n";
+
+            if (pingCount <= 50 || (i % 50 == 0)) {
+                std::cout << "[CLIENT] RTT #" << i << " = " << rtt << " ms\n";
+            }
 
             if (rtt < minRtt) minRtt = rtt;
             if (rtt > maxRtt) maxRtt = rtt;
@@ -141,11 +160,13 @@ int main() {
             std::cout << "[CLIENT] Unexpected: " << line << "\n";
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        if (delayMs > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+        }
     }
 
     if (minRtt != (uint64_t)-1) {
-        double avg = (double)sumRtt / (double)count;
+        double avg = (double)sumRtt / (double)pingCount;
         std::cout << "[CLIENT] RTT stats: min=" << minRtt
                   << "ms max=" << maxRtt
                   << "ms avg=" << avg << "ms\n";
