@@ -1,80 +1,88 @@
 # Realtime Client-Server Networking Demo (C++)
 
-A performance-focused C++ networking project implementing both TCP and a custom Reliable UDP layer using Winsock on Windows.
+A performance-focused C++ networking project implementing:
 
-This project demonstrates real-time networking concepts including RTT measurement, retransmission strategies, sliding window protocols, and packet loss simulation.
-
----
-
-# 🔹 Features
-
-## TCP Layer
-- Line-based protocol (HELLO / PING-PONG)
 - Multi-threaded TCP server
-- RTT measurement (round-trip time)
-- Sequential client load testing (50+ connections tested)
-- Localhost RTT: ~0–1 ms (avg ~0.4–0.5 ms)
+- Custom Reliable UDP layer (built from scratch)
+- Sliding Window protocol
+- Packet loss simulation
+- Timeout-based retransmission
+- Duplicate detection
+- RTT measurement
 
----
+Built using MSVC (Winsock) on Windows.
 
-## UDP Reliability Layer (Custom Implementation)
+------------------------------------------------------------
 
-A reliable data transmission system built on top of UDP featuring:
+## 1️⃣ TCP Layer
 
-- Sequence-based packet identification
-- ACK mechanism
-- Simulated ACK packet loss (configurable)
+Features:
+- Line-based protocol (HELLO / PING-PONG)
+- Multi-threaded server (thread-per-client)
+- RTT measurement
+- Sequential load testing (50+ clients tested)
+
+Localhost Results:
+RTT ≈ 0–1 ms (avg ~0.4–0.5 ms)
+
+Architecture:
+Client <-> Threaded TCP Server
+Blocking sockets
+Text-based protocol
+
+------------------------------------------------------------
+
+## 2️⃣ Reliable UDP Layer (Custom Protocol)
+
+Implemented reliability on top of UDP:
+
+- PacketHeader structure
+- Sequence numbers
+- ACK packets
+- Simulated ACK loss (30%)
 - Timeout-based retransmission
 - Duplicate packet detection
 - Sliding Window transmission
-- Performance statistics output
+- Performance statistics
 
----
+Protocol Header:
 
-# 🔹 Sliding Window Reliability Test (Localhost)
+struct PacketHeader {
+    uint32_t magic;
+    uint16_t type;     // 1=DATA, 2=ACK
+    uint16_t reserved;
+    uint32_t seq;
+};
 
-Test Configuration:
+Magic value: 'STAJ'
 
-- Total Packets: 200
-- Window Size: 16
-- ACK Loss Simulation: 30%
-- Timeout: 200ms
+------------------------------------------------------------
 
-Example Output:
+## 3️⃣ Sliding Window Test Configuration
 
-[UDP CLIENT] DONE: delivered 200 packets
-[UDP CLIENT] stats: sends=289 retries=89 elapsed=5794ms
+Total packets: 200  
+Window size: 16  
+ACK loss simulation: 30%  
+Timeout: 200ms  
 
+Example Result:
 
-Result:
-All 200 packets were successfully delivered despite 30% simulated ACK loss.
+[UDP CLIENT] DONE: delivered 200 packets  
+[UDP CLIENT] stats: sends=289 retries=89 elapsed=5794ms  
 
----
+All packets delivered successfully despite simulated packet loss.
 
-# 🔹 Architecture Overview
+------------------------------------------------------------
 
-## TCP
-Client <-> Multi-threaded Server  
-Blocking sockets  
-Line-based protocol
-
-## UDP
-Client → DATA(seq)  
-Server → ACK(seq)  
-
-Sliding Window:
-- Multiple in-flight packets
-- Timeout tracking per packet
-- Retransmit on missing ACK
-- Duplicate detection on server
-
----
-
-# 🔹 Build Instructions (Windows - MSVC)
+## 4️⃣ Build Instructions (Windows - MSVC)
 
 Open x64 Developer Command Prompt:
 
 "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat"
+
+Then navigate to project folder:
+
+cd /d C:\Users\AliEray\Desktop\realtime-client-server-demo
 
 Compile TCP:
 
@@ -86,47 +94,46 @@ Compile UDP:
 cl /EHsc udp_server.cpp /Fe:udp_server.exe
 cl /EHsc udp_client.cpp /Fe:udp_client.exe
 
-Run:
+------------------------------------------------------------
 
-Open two separate terminals:
+## 5️⃣ Run Instructions
+
+Open TWO terminals.
 
 Terminal 1:
 
 udp_server.exe
 
-
 Terminal 2:
 
 udp_client.exe
 
+------------------------------------------------------------
 
----
+## 6️⃣ Engineering Focus
 
-# 🔹 Engineering Focus
-
-This project focuses on:
+This project demonstrates:
 
 - Low-level socket programming
 - Reliable transmission over unreliable transport
-- Network performance measurement
-- Loss simulation and recovery strategies
 - Sliding window protocol design
-- Practical systems engineering concepts
+- Loss simulation and recovery
+- Performance measurement
+- Systems-level thinking
 
----
+------------------------------------------------------------
 
-# 🔹 Future Improvements (Optional Extensions)
+## 7️⃣ Future Extensions
 
-- Adaptive timeout (RTT-based RTO calculation)
-- Dynamic window size tuning
+- RTT-based adaptive timeout (RTO calculation)
+- Dynamic congestion window
 - Congestion control simulation
-- Cross-platform (Linux) support
-- Benchmark automation
+- Cross-platform (Linux) port
+- Automated benchmark scripts
 
----
+------------------------------------------------------------
 
-# 🔹 Author
-
-Ali Eray Kalaycı  
-Computer Engineering Student  
+Author:
+Ali Eray Kalaycı
+Computer Engineering Student
 Focused on Real-Time Systems & Networking
