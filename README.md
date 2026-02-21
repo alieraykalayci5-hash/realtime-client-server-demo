@@ -1,188 +1,168 @@
-# Realtime Client-Server Networking Demo (C++ / Winsock)
+Realtime Client-Server Networking Demo
 
-Performance-focused C++ networking project on Windows (MSVC + Winsock) implementing:
+C++ / Winsock
 
-- Multi-threaded TCP server (thread-per-client)
-- TCP line protocol (HELLO / PING-PONG) + RTT measurement
-- Custom Reliable UDP layer (built from scratch)
-- Sliding Window delivery
-- Simulated ACK loss + timeout-based retransmission
-- Duplicate detection + basic stats
+Performance-focused C++ networking project on Windows using MSVC and Winsock.
 
----
+This project implements a multi-threaded TCP server and a custom reliable UDP layer built from scratch, including sliding window delivery, simulated loss, retransmission logic, and performance measurement.
 
-## Requirements
+Implemented Components
 
-- Windows 10/11
-- MSVC toolchain (Visual Studio Build Tools / Visual Studio with **Desktop development with C++**)
-- No external dependencies (pure Winsock)
+Multi-threaded TCP server using a thread-per-client model.
+TCP line protocol with HELLO and PING-PONG messaging plus RTT measurement.
+Custom reliable UDP layer built on raw UDP sockets.
+Sliding window transmission model.
+Simulated ACK loss and timeout-based retransmission.
+Duplicate detection and statistics tracking.
 
-> Scripts use MSVC environment via `vcvars64.bat`, so you can run `.bat` files from a normal CMD.
+Requirements
 
----
+Windows 10 or Windows 11.
+MSVC toolchain through Visual Studio Build Tools or Visual Studio with Desktop development with C++.
+No external dependencies. Pure Winsock implementation.
 
-## Quick Start (Recommended)
+Scripts use the MSVC environment via vcvars64.bat, allowing batch files to run from a normal Command Prompt.
 
-From project folder:
+Quick Start
 
-- **Build everything**
-  - `build_all.bat`
+From the project folder:
 
-- **Run TCP demo**
-  - `run_tcp.bat`
+build_all.bat builds both TCP and UDP components.
+run_tcp.bat runs the TCP server and client demo.
+run_udp.bat runs the UDP server and client demo.
+clean.bat removes build outputs.
 
-- **Run UDP demo**
-  - `run_udp.bat`
+TCP Layer
+Features
 
-- **Clean build outputs**
-  - `clean.bat`
+Line-based protocol using HELLO <name> and PING <timestamp>.
+Server replies with ACK <name> and PONG <timestamp>.
+Thread-per-client architecture.
+RTT measurement on the client side.
+Sequential load testing with more than 50 clients.
 
----
+Localhost Results
 
-## 1) TCP Layer
+RTT approximately 0 to 1 milliseconds, average around 0.4 to 0.5 milliseconds.
 
-### Features
-- Line-based protocol: `HELLO <name>`, `PING <timestamp>`
-- Server replies: `ACK <name>`, `PONG <timestamp>`
-- Multi-threaded server (thread-per-client)
-- RTT measurement on client
-- Sequential load testing (50+ clients tested)
+Architecture
 
-### Localhost Results
-- RTT ≈ 0–1 ms (avg ~0.4–0.5 ms)
+Client communicates with a threaded TCP server.
+Blocking sockets are used.
+Text protocol with newline framing.
 
-### Architecture
-Client <-> Threaded TCP Server  
-Blocking sockets  
-Text protocol with newline framing
+Reliable UDP Layer
 
----
+Reliability is implemented on top of UDP.
 
-## 2) Reliable UDP Layer (Custom Protocol)
+PacketHeader structure contains magic value, type field, and sequence number.
+Sequence numbers are used for ordering.
+ACK packets confirm delivery.
+Simulated ACK loss defaults to 30 percent.
+Timeout-based retransmission ensures delivery.
+Duplicate detection is implemented on the server.
+Sliding window transmission is implemented on the client.
+Statistics include sends, retries, and elapsed time.
 
-Reliability implemented on top of UDP:
+Protocol Header Structure
 
-- `PacketHeader` (magic + type + seq)
-- Sequence numbers
-- ACK packets
-- Simulated ACK loss (default: 30%)
-- Timeout-based retransmission
-- Duplicate detection on server
-- Sliding Window transmission on client
-- Stats (sends / retries / elapsed)
-
-### Protocol Header
-
-```cpp
 #pragma pack(push, 1)
 struct PacketHeader {
-    uint32_t magic;    // 'STAJ'
-    uint16_t type;     // 1=DATA, 2=ACK
-    uint16_t reserved;
-    uint32_t seq;      // sequence number
+uint32_t magic;
+uint16_t type;
+uint16_t reserved;
+uint32_t seq;
 };
 #pragma pack(pop)
-Magic value: 'STAJ'
 
-3) Sliding Window Test (Localhost)
-Configuration (current demo)
-Total packets: 200
+Magic value is STAJ.
 
-Window size: 16
+Sliding Window Test (Localhost)
 
-ACK loss simulation: 30%
+Configuration used in the current demo:
 
-Timeout: 200ms
+Total packets set to 200.
+Window size set to 16.
+ACK loss simulation set to 30 percent.
+Timeout set to 200 milliseconds.
 
-Example Result
-csharp
-Kodu kopyala
+Example result:
+
 [UDP CLIENT] DONE: delivered 200 packets
 [UDP CLIENT] stats: sends=289 retries=89 elapsed=5794ms
+
 All packets are delivered successfully despite simulated ACK loss.
 
 Build (Manual / MSVC)
-Open x64 Developer Command Prompt:
 
-arduino
-Kodu kopyala
+Open x64 Developer Command Prompt.
+
+Initialize environment:
+
 "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat"
-Then:
 
-bash
-Kodu kopyala
-cd /d C:\Users\AliEray\Desktop\realtime-client-server-demo
-Compile TCP:
+Navigate to project directory:
 
-ruby
-Kodu kopyala
+cd path\to\realtime-client-server-demo
+
+Compile TCP components:
+
 cl /EHsc server.cpp /Fe:server.exe
 cl /EHsc client.cpp /Fe:client.exe
-Compile UDP:
 
-ruby
-Kodu kopyala
+Compile UDP components:
+
 cl /EHsc udp_server.cpp /Fe:udp_server.exe
 cl /EHsc udp_client.cpp /Fe:udp_client.exe
+
 Run (Manual)
+
 Open two terminals.
 
-TCP:
+For TCP:
 
-Terminal 1: server.exe
+Terminal 1 runs server.exe
+Terminal 2 runs client.exe
 
-Terminal 2: client.exe
+For UDP:
 
-UDP:
+Terminal 1 runs udp_server.exe
+Terminal 2 runs udp_client.exe
 
-Terminal 1: udp_server.exe
+Repository Structure
 
-Terminal 2: udp_client.exe
+server.cpp and client.cpp implement the TCP demo including line protocol and RTT measurement.
+udp_server.cpp and udp_client.cpp implement the reliable UDP demo including sequence numbers, acknowledgments, loss simulation, and sliding window.
+build_all.bat builds TCP and UDP components.
+run_tcp.bat launches TCP demo.
+run_udp.bat launches UDP demo.
+clean.bat removes object and executable files.
+.gitignore ignores build artifacts.
 
-Repo Structure
-server.cpp / client.cpp : TCP demo (line protocol + RTT)
+Notes and Limitations
 
-udp_server.cpp / udp_client.cpp : Reliable UDP demo (seq/ack + loss + sliding window)
-
-build_all.bat : builds TCP + UDP
-
-run_tcp.bat : opens 2 windows and runs TCP server/client
-
-run_udp.bat : opens 2 windows and runs UDP server/client
-
-clean.bat : removes .obj and .exe
-
-.gitignore : ignores build artifacts
-
-Notes / Limitations (Demo Scope)
-Reliable UDP demo focuses on delivery (seq/ack + retransmit + window).
+The reliable UDP demo focuses on delivery using sequence numbers, acknowledgments, retransmission, and sliding window logic.
 It does not implement congestion control, bandwidth estimation, or stream reassembly.
 
-UDP server duplicate tracking uses an in-memory set for demonstration; production code would use
-bounded tracking (window-based) to avoid unbounded growth.
+UDP server duplicate tracking uses an in-memory set for demonstration. Production systems would use bounded window-based tracking to prevent unbounded memory growth.
 
 Engineering Focus
-Low-level socket programming (Winsock)
 
-Reliable delivery over unreliable transport (UDP)
+Low-level socket programming with Winsock.
+Reliable delivery over unreliable transport.
+Sliding window protocol design.
+Loss simulation and recovery.
+RTT measurement and performance reporting.
+Systems-level thinking.
 
-Sliding window protocol design
+Future Extensions
 
-Loss simulation + recovery
-
-RTT measurement + performance reporting
-
-Systems-level thinking
-
-Future Extensions (Optional)
-RTT-based adaptive timeout (RTO)
-
-Dynamic congestion window / congestion control simulation
-
-Cross-platform port (Linux)
-
-Automated benchmarks and reporting
+RTT-based adaptive timeout.
+Dynamic congestion window or congestion control simulation.
+Cross-platform port to Linux.
+Automated benchmarks and reporting.
 
 Author
+
 Ali Eray Kalaycı
-Computer Engineering Student — Real-Time Systems & Networking
+Computer Engineering — Real-Time Systems and Networking Focus
